@@ -1,3 +1,10 @@
 ---
 - name: "haproxy | import install"
   ansible.builtin.import_tasks: install/main.yml
+  tags:
+    - install
+
+- name: "haproxy | configure"
+  ansible.builtin.import_tasks: configure/main.yml
+  tags:
+    - configure

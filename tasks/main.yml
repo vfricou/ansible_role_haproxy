@@ -1,9 +1,13 @@
 ---
 - name: "import validator"
   ansible.builtin.import_tasks: validator/main.yml
+  tags:
+    - always
 
 - name: "import prerequisites"
   ansible.builtin.import_tasks: prerequisites/main.yml
+  tags:
+    - install
 
 - name: "import haproxy install"
   ansible.builtin.import_tasks: haproxy/main.yml

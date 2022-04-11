@@ -1,0 +1,128 @@
+#########################################
+# Ansible provided file
+# DONT'T MODIFY THIS FILE
+# All manual configuration could be lost
+#########################################
+
+global
+  chroot /var/lib/haproxy
+  stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
+  stats timeout 30s
+  user haproxy
+  group haproxy
+  daemon
+
+  # Logs configuration to rsyslog
+  log /dev/log	local0
+  log /dev/log	local1 notice
+
+{% if haproxy_https_frontend %}
+  # TLS configuration
+  # Default SSL material locations
+  ca-base /etc/ssl/certs
+  crt-base /etc/ssl/private
+  ## TLS Hardening
+  # See: https://ssl-config.mozilla.org/#server=haproxy&server-version=2.0.3&config=intermediate
+  ssl-default-bind-ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-ECDSA-CHACHA20-POLY1305-D:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305-D:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256
+  ssl-default-bind-ciphersuites TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256
+  ssl-default-server-ciphersuites TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256
+  ssl-default-bind-options no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets
+{% endif %}
+
+defaults
+  log	global
+  mode http
+
+  # Log http requests
+  option	httplog
+  # Don't log null requests
+  option	dontlognull
+  # Setup X-Forwarded-For header
+  option  forwardfor
+  # Close http connection to backend
+  option  http-server-close
+
+  # Setup timeout
+  timeout connect 1200s
+  timeout client  1200s
+  timeout server  1200s
+
+{% if haproxy_stats %}
+# HAProxy stats page
+listen stats
+  bind {{ haproxy_stat_bind_addr }}:{{ haproxy_stat_bind_port }}
+  stats enable
+  stats hide-version
+  stats refresh 30s
+  stats show-node
+  stats auth {{ haproxy_stat_user }}:{{ haproxy_stat_pass }}
+  stats uri /stats
+
+{% endif %}
+frontend http
+  bind :80
+  # Add header X-Real-IP
+  option forwardfor header X-Real-IP
+  http-request add-header X-Real-IP %[src]
+{% if haproxy_https_frontend %}
+  redirect scheme https code 301 if !{ ssl_fc }
+{% endif %}
+
+{% if entries is defined %}
+{% for entry in entries %}
+  acl host_{{ entry }} hdr(host) -i {{ entry }}
+  use_backend be_{{ entry }} if host_{{ entry }}
+
+{% endfor %}
+{% endif %}
+
+{% if haproxy_https_frontend %}
+frontend https
+{% if haproxy_ssl_letsencrypt %}
+  bind :443 ssl crt-list /etc/haproxy/certs/domains_list.txt alpn h2,http/1.1
+{% else %}
+  bind :443 ssl crt {{ certificate_location }} alpn h2,http/1.1
+{% endif %}
+  # Add header X-Real-IP
+  option forwardfor header X-Real-IP
+  http-request add-header X-Real-IP %[src]
+  reqadd X-Forwarded-Proto:\ https
+
+  ## Redirect http to https
+  redirect scheme https code 301 if !{ ssl_fc }
+  ## Set HSTS header
+  http-response set-header Strict-Transport-Security max-age=63072000
+
+{% if haproxy_ssl_letsencrypt %}
+  acl letsencrypt-acl path_beg /.well-known/acme-challenge/
+  use_backend letsencrypt-back if letsencrypt-acl
+
+{% endif %}
+{% if entries is defined %}
+{% for entry in entries %}
+  acl host_{{ entry }} hdr(host) -i {{ entry }}
+  use_backend be_{{ entry }} if host_{{ entry }}
+
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if haproxy_ssl_letsencrypt %}
+backend letsencrypt-back
+  server letsencrypt 127.0.0.1:8888
+
+{% endif %}
+{% if entries is defined %}
+{% for entry in entries %}
+backend be_{{ entry }}
+{% if entries[entry]['ssl_backend'] == 'no' %}
+  http-request set-header Host {{ entry }}
+  server {{ entries[entry]['server'] }} {{ entries[entry]['server'] }}:{{ entries[entry]['port'] }} check port {{ entries[entry]['port'] }}
+{% else %}
+  http-request set-header Host {{ entry }}
+  http-request set-header X-Forwarded-Proto https
+  server {{ entries[entry]['server'] }} {{ entries[entry]['server'] }}:{{ entries[entry]['port'] }} ssl verify none check port {{ entries[entry]['port'] }}
+{% endif %}
+
+{% endfor %}
+{% endif %}

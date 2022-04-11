@@ -1,0 +1,21 @@
+---
+- name: "haproxy | configure | deploy haproxy configuration"
+  ansible.builtin.template:
+    src: 'haproxy/haproxy.conf.j2'
+    dest: '/etc/haproxy/haproxy.cfg'
+    backup: yes
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  notify: restart haproxy
+
+- name: "haproxy | configure | validate haproxy configuration"  # noqa 301 305
+  ansible.builtin.shell: haproxy -c -f /etc/haproxy/haproxy.cfg
+
+- name: "haproxy | configure | configure logrotation"
+  ansible.builtin.template:
+    src: 'haproxy/logrotate.j2'
+    dest: '/etc/logrotate.d/haproxy'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'

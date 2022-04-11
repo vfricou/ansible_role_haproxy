@@ -1,0 +1,15 @@
+---
+haproxy_log_retention: '365'
+haproxy_stats: true
+haproxy_stat_bind_addr: '127.0.0.1'
+haproxy_stat_bind_port: '38080'
+haproxy_stat_user: 'hastats'
+haproxy_stat_pass: 'hastats'
+haproxy_https_frontend: true
+haproxy_ssl_letsencrypt: false
+certificate_location: '/etc/haproxy/certs/cert.pem'
+#entries:
+#  test.domain.tld:
+#    server: test.domain.tld
+#    port: 80
+#    ssl_backend: no

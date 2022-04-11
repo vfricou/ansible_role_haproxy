@@ -1,0 +1,6 @@
+---
+- name: "prerequisites | install required packages"
+  ansible.builtin.package:
+    state: present
+    name:
+      - rsyslog

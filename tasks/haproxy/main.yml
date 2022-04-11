@@ -1,0 +1,3 @@
+---
+- name: "haproxy | import install"
+  ansible.builtin.import_tasks: install/main.yml

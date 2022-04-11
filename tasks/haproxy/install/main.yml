@@ -1,0 +1,19 @@
+---
+- name: "haproxy | install | install haproxy packages"
+  ansible.builtin.package:
+    name:
+      - haproxy
+    state: present
+
+- name: "haproxy | install | deploy rsyslog configuration"
+  ansible.builtin.copy:
+    src: 'haproxy/rsyslog.conf'
+    dest: '/etc/rsyslog.d/49-haproxy.conf'
+    backup: yes
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  notify: restart rsyslog
+
+- name: "haproxy | install | flush handlers"
+  ansible.builtin.meta: flush_handlers

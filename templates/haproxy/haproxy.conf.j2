@@ -125,12 +125,16 @@ backend be_{{ entry }}
   mode http
 {% if entries[entry]['ssl_backend'] == 'no' %}
   default-server check
-  http-request set-header Host {{ entry }}
+{% if entries[entry]['host_header'] is defined %}
+  http-request set-header Host {{ entries[entry]['host_header'] }}
+{% endif %}
 {% for server in entries[entry]['backends'] %}
   server {{ entries[entry]['backends'][server]['fqdn'] }} {{ entries[entry]['backends'][server]['fqdn'] }}:{{ entries[entry]['backends'][server]['port'] }} port {{ entries[entry]['backends'][server]['port'] }}
 {% endfor %}
 {% else %}
-  http-request set-header Host {{ entry }}
+{% if entries[entry]['host_header'] is defined %}
+  http-request set-header Host {{ entries[entry]['host_header'] }}
+{% endif %}
   http-request set-header X-Forwarded-Proto https
 {% for server in entries[entry]['backends'] %}
   server {{ entries[entry]['backends'][server]['fqdn'] }} {{ entries[entry]['backends'][server]['fqdn'] }}:{{ entries[entry]['backends'][server]['port'] }} ssl verify none port {{ entries[entry]['backends'][server]['port'] }}

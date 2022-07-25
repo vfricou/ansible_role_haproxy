@@ -1,4 +1,13 @@
 ---
+- name: "haproxy | configure | ensure certs folder exist"
+  ansible.builtin.file:
+    path: '/etc/haproxy/certs/'
+    owner: 'root'
+    group: 'root'
+    mode: '0755'
+    state: directory
+  when: haproxy_https_frontend
+
 - name: "haproxy | configure | deploy haproxy configuration"
   ansible.builtin.template:
     src: 'haproxy/haproxy.conf.j2'

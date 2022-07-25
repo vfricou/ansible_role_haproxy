@@ -9,9 +9,10 @@ haproxy_https_frontend: true
 haproxy_ssl_letsencrypt: false
 certificate_location: '/etc/haproxy/certs/cert.pem'
 #entries:
-#  elk.fricouv.loc:
+#  front.domain.tld:
 #    ssl_backend: 'no'
+#    host_header: 'front.domain.tld'
 #    backends:
 #      1:
-#        fqdn: 'elk01.fricouv.loc'
-#        port: '5601'
+#        fqdn: 'back.domain.loc'
+#        port: '80'

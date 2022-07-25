@@ -4,12 +4,12 @@
   tags:
     - install
 
-#- name: "haproxy | import letsencrypt"
-#  ansible.builtin.import_tasks: letsencrypt/main.yml
-#  when:
-#    - haproxy_ssl_letsencrypt
-#  tags:
-#    - configure
+- name: "haproxy | import letsencrypt"
+  ansible.builtin.import_tasks: letsencrypt/main.yml
+  when:
+    - haproxy_ssl_letsencrypt
+  tags:
+    - configure
 
 - name: "haproxy | configure"
   ansible.builtin.import_tasks: configure/main.yml

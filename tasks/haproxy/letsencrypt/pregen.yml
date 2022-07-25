@@ -1,0 +1,36 @@
+---
+- name: "letsencrypt | pregen | stats existing privatekey for {{ fqdn }}"
+  ansible.builtin.stat:
+    path: "{{ le_keys_dir }}/{{ fqdn }}.key"
+  register: private_key_file
+
+- name: "letsencrypt | pregen | stats existing csr for {{ fqdn }}"
+  ansible.builtin.stat:
+    path: "{{ le_csrs_dir }}/{{ fqdn }}.csr"
+  register: csr_file
+
+- name: "letsencrypt | pregen | generate privatkey for {{ fqdn }}"
+  community.crypto.openssl_privatekey:
+    path: "{{ le_keys_dir }}/{{ fqdn }}.key"
+    type: RSA
+    state: present
+    size: "{{ le_key_size }}"
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  when:
+    - not private_key_file.stat.exists
+
+- name: "letsencrypt | pregen | generate csr for {{ fqdn }}"
+  community.crypto.openssl_csr:
+    path: "{{ le_csrs_dir }}/{{ fqdn }}.csr"
+    common_name: "{{ fqdn }}"
+    email_address: "{{ email }}"
+    locality_name: "{{ locality }}"
+    organization_name: "{{ organization }}"
+    organizational_unit_name: "{{ organization_unit }}"
+    privatekey_path: "{{ le_keys_dir }}/{{ fqdn }}.key"
+    state: present
+    state_or_province_name: "{{ state_or_province }}"
+  when:
+    - not csr_file.stat.exists

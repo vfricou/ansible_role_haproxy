@@ -36,7 +36,8 @@ Feel free to fork and update this according to your requirements.
 
 ## On target OS
 
-You need to have python3 package installed on remote OS to use this role.
+You need to have python3 package installed on remote OS to use this role.  
+On RHEL systems `epel` repositories are required.
 
 # Actions
 

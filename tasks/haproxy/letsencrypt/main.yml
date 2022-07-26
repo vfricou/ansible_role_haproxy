@@ -1,0 +1,33 @@
+---
+- name: "letsencrypt | import prerequisites tasks"
+  ansible.builtin.import_tasks: prerequisites.yml
+
+- name: "letsencrypt | stat if account privatkey exist"
+  ansible.builtin.stat:
+    path: '{{ le_account_key }}'
+  register: account_private_key
+
+- name: "letsencrypt | create account private key"
+  community.crypto.openssl_privatekey:
+    path: '{{ le_account_key }}'
+  when: not account_private_key.stat.exists
+
+- name: "INCLUDE => certificate pre generation"
+  ansible.builtin.include_tasks: pregen.yml
+  vars:
+    fqdn: "{{ item.key }}"
+    email: "{{ item.value.acme.email }}"
+    locality: "{{ item.value.acme.locality }}"
+    organization: "{{ item.value.acme.org }}"
+    organization_unit: "{{ item.value.acme.ou }}"
+    state_or_province: "{{ item.value.acme.sop }}"
+  with_dict:
+    - "{{ entries }}"
+
+- name: "INCLUDE => certificate generation"
+  ansible.builtin.include_tasks: generate.yml
+  vars:
+    fqdn: "{{ item.key }}"
+    email: "{{ item.value.acme.email }}"
+  with_dict:
+    - "{{ entries }}"

@@ -1,0 +1,18 @@
+#########################################
+# Ansible provided file
+# DONT'T MODIFY THIS FILE
+# All manual configuration could be lost
+#########################################
+
+/var/log/haproxy/*.log {
+  daily
+  rotate {{ haproxy_log_retention }}
+  missingok
+  notifempty
+  compress
+  copytruncate
+  olddir /var/log/haproxy/archives
+  postrotate
+    /usr/lib/rsyslog/rsyslog-postrotate
+  endscript
+}

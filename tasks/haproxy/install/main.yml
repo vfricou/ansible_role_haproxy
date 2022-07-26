@@ -15,5 +15,17 @@
     mode: '0644'
   notify: restart rsyslog
 
+- name: "haproxy | install | deploy base conf for letsencrypt generation"
+  ansible.builtin.copy:
+    src: 'haproxy/haproxy-le-base.conf'
+    dest: '/etc/haproxy/haproxy.cfg'
+    backup: yes
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  notify: restart haproxy
+  when:
+    - haproxy_ssl_letsencrypt
+
 - name: "haproxy | install | flush handlers"
   ansible.builtin.meta: flush_handlers

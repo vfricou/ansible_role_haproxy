@@ -4,3 +4,15 @@
     state: present
     name:
       - rsyslog
+
+- name: "prerequisites | ensure required folder exist"
+  file:
+    path: "{{ item.path }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+    state: directory
+  with_items:
+    - { path: '/var/log/haproxy', owner: 'root', group: 'root', mode: '0755' }
+    - { path: '/var/log/haproxy/archives', owner: 'root', group: 'root', mode: '0755' }
+    - { path: '/run/haproxy', owner: 'root', group: 'root', mode: '0755' }

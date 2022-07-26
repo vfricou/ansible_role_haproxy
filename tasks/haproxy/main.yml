@@ -1,3 +1,17 @@
 ---
 - name: "haproxy | import install"
   ansible.builtin.import_tasks: install/main.yml
+  tags:
+    - install
+
+- name: "haproxy | import letsencrypt"
+  ansible.builtin.import_tasks: letsencrypt/main.yml
+  when:
+    - haproxy_ssl_letsencrypt
+  tags:
+    - configure
+
+- name: "haproxy | configure"
+  ansible.builtin.import_tasks: configure/main.yml
+  tags:
+    - configure

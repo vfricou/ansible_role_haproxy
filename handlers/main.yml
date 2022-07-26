@@ -4,3 +4,9 @@
     name: rsyslog
     state: restarted
     enabled: yes
+
+- name: "restart haproxy"
+  ansible.builtin.service:
+    name: haproxy
+    state: restarted
+    enabled: yes

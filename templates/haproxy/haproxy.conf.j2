@@ -27,6 +27,7 @@ global
   ssl-default-bind-ciphersuites     TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256
   ssl-default-server-ciphersuites   TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256
   ssl-default-bind-options          no-sslv3 no-tlsv10 no-tlsv11 no-tls-tickets
+  ssl-dh-param-file                 /etc/haproxy/dhparams.pem
 
 {% endif %}
 #########################################
@@ -68,7 +69,14 @@ frontend http
   option         forwardfor header X-Real-IP
   http-request   add-header X-Real-IP %[src]
 {% if haproxy_https_frontend %}
+{% if haproxy_ssl_letsencrypt %}
+  acl letsencrypt-acl path_beg /.well-known/acme-challenge/
+  redirect scheme https code 301 if !{ ssl_fc } !letsencrypt-acl
+  use_backend letsencrypt-back if letsencrypt-acl
+
+{% else %}
   redirect scheme https code 301 if !{ ssl_fc }
+{% endif %}
 {% endif %}
 
 {% if entries is defined %}

@@ -1,0 +1,72 @@
+---
+- name: "letsencrypt | generate | generate challenge for {{ fqdn }}"
+  community.crypto.acme_certificate:
+    account_key_src: '{{ le_account_key }}'
+    account_email: '{{ email }}'
+    csr: "{{ le_csrs_dir }}/{{ fqdn }}.csr"
+    dest: "{{ le_certs_dir }}/{{ fqdn }}.crt"
+    fullchain_dest: "{{ le_certs_dir }}/{{ fqdn }}.fullchain.crt"
+    challenge: http-01
+    acme_directory: '{{ acme_directory }}'
+    acme_version: 2
+    terms_agreed: yes
+  register: acme_challenge_generation
+
+- name: "letsencrypt | generate | deploy challenge for submission for {{ fqdn }}"
+  ansible.builtin.copy:
+    dest: "/opt/letsencrypt/{{ acme_challenge_generation['challenge_data'][fqdn]['http-01']['resource'] }}"
+    content: "{{ acme_challenge_generation['challenge_data'][fqdn]['http-01']['resource_value'] }}"
+  when: acme_challenge_generation.changed
+
+- name: "letsencrypt | generate | perform acme challenge for {{ fqdn }}"
+  community.crypto.acme_certificate:
+    account_key_src: '{{ le_account_key }}'
+    csr: "{{ le_csrs_dir }}/{{ fqdn }}.csr"
+    dest: "{{ le_certs_dir }}/{{ fqdn }}.crt"
+    fullchain_dest: "{{ le_certs_dir }}/{{ fqdn }}.fullchain.crt"
+    chain_dest: "{{ le_cas_dir }}/{{ fqdn }}-intermediate.crt"
+    challenge: http-01
+    data: "{{ acme_challenge_generation }}"
+    acme_directory: '{{ acme_directory }}'
+    acme_version: 2
+    terms_agreed: yes
+
+- name: "letsencrypt | generate | retreive fullchain content"
+  ansible.builtin.slurp:
+    src: "{{ le_certs_dir }}/{{ fqdn }}.fullchain.crt"
+  register: fullchain_content
+
+- name: "letsencrypt | generate | retreive privatekey content"
+  ansible.builtin.slurp:
+    src: "{{ le_keys_dir }}/{{ fqdn }}.key"
+  register: privkey_content
+
+- name: "letsencrypt | pregen | stats existing haproxy cert file for {{ fqdn }}"
+  ansible.builtin.stat:
+    path: '/etc/haproxy/certs/{{ fqdn }}.pem'
+  register: dest_cert_file
+
+- name: "letsencrypt | generate | ensure cert file for {{ fqdn }} dest exists"
+  ansible.builtin.file:
+    path: '/etc/haproxy/certs/{{ fqdn }}.pem'
+    state: touch
+    owner: 'root'
+    group: 'root'
+    mode: '0400'
+  when:
+    - not dest_cert_file.stat.exists
+
+- name: "letsencrypt | generate | assembles certificate files for {{ fqdn }}"
+  ansible.builtin.blockinfile:
+    path: '/etc/haproxy/certs/{{ fqdn }}.pem'
+    block: |
+      {{ fullchain_content.content | b64decode }}
+      {{ privkey_content.content | b64decode }}
+
+- name: "letsencrypt | generate | configure haproxy domain_list with cert"
+  ansible.builtin.lineinfile:
+    path: '/etc/haproxy/certs/domains_list.txt'
+    regexp: '^/etc/haproxy/certs/{{ fqdn }}.pem {{ fqdn }}$'
+    line: '/etc/haproxy/certs/{{ fqdn }}.pem {{ fqdn }}'
+  notify: restart haproxy
+

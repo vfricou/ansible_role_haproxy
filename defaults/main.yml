@@ -1,13 +1,27 @@
 ---
+# HAProxy tuning
 haproxy_log_retention: '365'
 haproxy_stats: true
 haproxy_stat_bind_addr: '127.0.0.1'
 haproxy_stat_bind_port: '38080'
 haproxy_stat_user: 'hastats'
 haproxy_stat_pass: 'hastats'
-haproxy_https_frontend: true
-haproxy_ssl_letsencrypt: false
+haproxy_https_frontend: false
 certificate_location: '/etc/haproxy/certs/cert.pem'
+
+# Activate letsencrypt with generation
+haproxy_ssl_letsencrypt: false
+acme_directory: https://acme-v02.api.letsencrypt.org/directory
+le_dir: '/etc/letsencrypt'
+le_keys_dir: '/etc/letsencrypt/keys'
+le_csrs_dir: '/etc/letsencrypt/csrs'
+le_certs_dir: '/etc/letsencrypt/certs'
+le_cas_dir: '/etc/letsencrypt/cas'
+le_account_key: '/etc/letsencrypt/account/account.key'
+le_gen_dir: '/opt/letsencrypt/.well-known/acme-challenge'
+le_key_size: 4096
+
+# HAProxy configuration definition
 #entries:
 #  front.domain.tld:
 #    ssl_backend: 'no'

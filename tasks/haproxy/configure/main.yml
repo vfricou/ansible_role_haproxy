@@ -20,6 +20,9 @@
 
 - name: "haproxy | configure | validate haproxy configuration"  # noqa 301 305
   ansible.builtin.shell: haproxy -c -f /etc/haproxy/haproxy.cfg
+  register: haproxy_conf_validation
+  changed_when: haproxy_conf_validation.rc|int > 0
+  failed_when: haproxy_conf_validation.rc|int > 0
 
 - name: "haproxy | configure | configure logrotation"
   ansible.builtin.template:

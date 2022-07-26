@@ -1,17 +1,6 @@
 ---
-- name: "letsencrypt | ensure required folder exists"
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    owner: 'root'
-    group: 'root'
-    mode: '711'
-  with_items:
-    - "{{ le_dir }}/account"
-    - "{{ le_dir }}/certs"
-    - "{{ le_dir }}/csrs"
-    - "{{ le_dir }}/keys"
-    - "{{ le_gen_dir }}"
+- name: "letsencrypt | import prerequisites tasks"
+  ansible.builtin.import_tasks: prerequisites.yml
 
 - name: "letsencrypt | stat if account privatkey exist"
   ansible.builtin.stat:
@@ -23,7 +12,7 @@
     path: '{{ le_account_key }}'
   when: not account_private_key.stat.exists
 
-- name: "INCLUDE => certificate generation"
+- name: "INCLUDE => certificate pre generation"
   ansible.builtin.include_tasks: pregen.yml
   vars:
     fqdn: "{{ item.key }}"
@@ -32,5 +21,13 @@
     organization: "{{ item.value.acme.org }}"
     organization_unit: "{{ item.value.acme.ou }}"
     state_or_province: "{{ item.value.acme.sop }}"
+  with_dict:
+    - "{{ entries }}"
+
+- name: "INCLUDE => certificate generation"
+  ansible.builtin.include_tasks: generate.yml
+  vars:
+    fqdn: "{{ item.key }}"
+    email: "{{ item.value.acme.email }}"
   with_dict:
     - "{{ entries }}"

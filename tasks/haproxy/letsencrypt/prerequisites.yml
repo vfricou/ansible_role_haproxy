@@ -1,0 +1,40 @@
+---
+- name: "letsencrypt | prerequisites | ensure required folder exists"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: 'root'
+    group: 'root'
+    mode: '711'
+  with_items:
+    - "{{ le_dir }}/account"
+    - "{{ le_dir }}/cas"
+    - "{{ le_dir }}/certs"
+    - "{{ le_dir }}/csrs"
+    - "{{ le_dir }}/keys"
+    - "{{ le_gen_dir }}"
+
+- name: "letsencrypt | prerequisites | install required packages"
+  ansible.builtin.package:
+    state: present
+    name: lighttpd
+
+- name: "letsencrypt | prerequisites | deploy webserver conf for challenge validation"
+  ansible.builtin.copy:
+    src: lighttpd/lighttpd.conf
+    dest: /etc/lighttpd/lighttpd.conf
+    backup: yes
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  register: lighttpd_config
+
+- name: "letsencrypt | prerequisites | restart lighttpd"
+  ansible.builtin.service:
+    name: lighttpd
+    state: restarted
+    enabled: yes
+  when:
+    - lighttpd_config.changed
+
+

@@ -82,6 +82,12 @@ frontend http
 {% if entries is defined %}
 {% for entry in entries %}
   # Frontend for {{ entry }}
+{% if entries[entry]['acl'] is defined %}
+{% if entries[entry]['acl']['whitelist_src'] is defined %}
+  acl network_allowed src 127.0.0.1 {{ entries[entry]['acl']['whitelist_src'] | join(" ") }}
+  tcp-request connection reject if !network_allowed
+{% endif %}
+{% endif %}
   acl host_{{ entry }} hdr(host) -i {{ entry }}
   use_backend be_{{ entry }} if host_{{ entry }}
 
@@ -114,6 +120,12 @@ frontend https
 {% if entries is defined %}
 {% for entry in entries %}
   # Frontend for {{ entry }}
+{% if entries[entry]['acl'] is defined %}
+{% if entries[entry]['acl']['whitelist_src'] is defined %}
+  acl network_allowed src 127.0.0.1 {{ entries[entry]['acl']['whitelist_src'] | join(" ") }}
+  tcp-request connection reject if !network_allowed
+{% endif %}
+{% endif %}
   acl host_{{ entry }} hdr(host) -i {{ entry }}
   use_backend be_{{ entry }} if host_{{ entry }}
 
